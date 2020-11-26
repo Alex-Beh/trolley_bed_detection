@@ -79,13 +79,18 @@ class DebuggingTools:
     def get_frame_read(self):
         ret, frame = self.vid_cap.read()
 
+        print("1")
         # Padded resize
-        img = self.letterbox(frame, new_shape=self.img_size)[0]
+        if ret:
+            img = self.letterbox(frame, new_shape=self.img_size)[0]
+            # Convert
+            img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
+            img = np.ascontiguousarray(img)
+            return ret,img,frame
 
-        # Convert
-        img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
-        img = np.ascontiguousarray(img)
-        return ret,img,frame
+        print("2")
+
+        return ret,[],frame
     
     def release_video_writer(self):
         self.vid_writer.release()
@@ -161,8 +166,6 @@ class Detection:
 
         # Inference
         # t1 = time_synchronized()
-        print(opt.augment)
-        print(img.shape)
         pred = self.model(img, augment=self.augment)[0]
 
         # Apply NMS
@@ -222,27 +225,31 @@ if __name__ == '__main__':
     while(loading_video):
         try:
             status , input_image , im0 = dataset.get_frame_read()
-            
             if not status:
-                print("Status false!")
                 loading_video = False
                 dataset.release_video_writer()
+                sys.exit(0)
+                continue
             
-            start_time = time.time()
+        except Exception as e:
+            print(e)
+            print("maybe no more video liao")
+            loading_video = False
+            dataset.release_video_writer()
+            sys.exit(0)
 
-            # Detection
-            pred = detector.detect(input_image)
-            pred_ = []
-            for i, det in enumerate(pred):  # detections per image
-                
-                if len(det):
-                    # Rescale boxes from img_size to im0 size
-                    det[:, :4] = scale_coords([384,640], det[:, :4], im0.shape).round()
-                    pred_.append(det)
-            
-            # print(type(pred_))
-            # print(pred_)
-            # Tracking
+        start_time = time.time()
+
+        # Detection
+        pred = detector.detect(input_image)
+        pred_ = []
+        for i, det in enumerate(pred):  # detections per image
+            if len(det):
+                # Rescale boxes from img_size to im0 size
+                det[:, :4] = scale_coords([384,640], det[:, :4], im0.shape).round()
+                pred_.append(det)
+        
+        if pred_ !=[]:
             trackers = tracker.tracker_.update(pred_[0].cpu().numpy())
             cycle_time = time.time() - start_time
             total_time += cycle_time
@@ -252,7 +259,7 @@ if __name__ == '__main__':
             input_image = np.moveaxis(input_image,0,-1)
             input_image = cv2.cvtColor(input_image, cv2.COLOR_RGB2BGR)
 
-            print(f"Tracker {trackers.shape}")
+            # print(f"Tracker {trackers.shape}")
             for d in trackers:
                 if d[4] in track_trajectory:
                     track_trajectory[d[4]].append([int((d[2]+d[0])/2),int((d[3]+d[1])/2)])
@@ -287,14 +294,11 @@ if __name__ == '__main__':
                             moving_direction = 'left'
 
                         last_x = i[0]
-            dataset.save_frame_into_video(im0)
+                        
+        dataset.save_frame_into_video(im0)
 
 
-        except Exception as e:
-            print(e)
-            print("maybe no more video liao")
-            loading_video = False
-            dataset.release_video_writer()
+
         
         
 

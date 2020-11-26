@@ -1,0 +1,5 @@
+train: /home/hopermf/alex_ws/Alex_software/trolley_bed_detection/yolov5/dataset/trolley_bed/train/images
+val: /home/hopermf/alex_ws/Alex_software/trolley_bed_detection/yolov5/dataset/trolley_bed/valid/images
+
+nc: 1
+names: ['trolley_bed']

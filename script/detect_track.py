@@ -24,6 +24,7 @@ from utils.torch_utils import select_device, time_synchronized
 from sort import Sort
 
 import numpy as np
+from itertools import count
 
 class DebuggingTools:
     def __init__(self, file,img_size=640):
@@ -261,18 +262,19 @@ if __name__ == '__main__':
                 direction = 0
                 moving_direction = ''
                 if len(track_trajectory[key])>min_trajectory_length:
-                    for index , i in enumerate(track_trajectory[key]):
+                    # for index , i in enumerate(track_trajectory[key]):
+                    for index, number in zip(count(step=5), track_trajectory[key]):
                         if index==0:
-                            last_x = i[0]
+                            last_x = number[0]
                             continue
-                        direction_ = 1 if i[0] - last_x > 0 else -1
+                        direction_ = 1 if number[0] - last_x > 0 else -1
                         direction+=direction_
                         if direction >moving_direction_threshold:
                             moving_direction = 'right'
                         elif direction < -moving_direction_threshold:
                             moving_direction = 'left'
 
-                        last_x = i[0]
+                        last_x = number[0]
             
             end_time = time.time()
 

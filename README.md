@@ -12,19 +12,28 @@
 
 ### Testing Phase
     1. Testing on Image
-    ```bash
+    ```
     python3 detect.py --source ../dataset/trolley_bed/test/images --weights ../runs/train/exp7_trolley_bed/weights/best.pt --conf 0.5
     ```
 
     2. Testing on Video
-    ```bash
+    ```
     python3 detect.py --source ../dataset/trolley_bed/0.mp4 --weights ../runs/train/exp7_trolley_bed/weights/best.pt --conf 0.5
     ```
 
-    3. 
+    3. Testing on Detection+Tracking
+    ```
+    python3 detect_track.py
+    ```
 
 ### TensorRT
     Before: around 111fps
     After:  around 
 
     Accuracy wise:.........
+
+### Improvement
+    1. Direction checking
+        - filter direction output when the trolley bed is static
+        - better way to determine the direction
+    2. 

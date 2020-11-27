@@ -23,5 +23,8 @@
 
     3. 
 
+### TensorRT
+    Before: around 111fps
+    After:  around 
 
-
+    Accuracy wise:.........

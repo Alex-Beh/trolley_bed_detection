@@ -30,30 +30,12 @@ class DebuggingTools:
         self.img_size=img_size
 
         self.vid_cap = cv2.VideoCapture(file)  # video capture object
-        # self.vid_cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)  # set buffer size
 
-        # Read until video is completed
-        # while(self.vid_cap.isOpened()):
-        #     # Capture frame-by-frame
-        #     ret, frame = self.vid_cap.read()
-        #     if ret == True:
-
-        #         # Display the resulting frame
-        #         cv2.imshow('Frame',frame)
-
-        #         # Press Q on keyboard to  exit
-        #         if cv2.waitKey(25) & 0xFF == ord('q'):
-        #             break
-        #     else: 
-        #         break
-        # self.vid_cap.release()
-        # cv2.destroyAllWindows()
-
-        source, view_img, save_txt, imgsz = opt.source, opt.view_img, opt.save_txt, opt.img_size
+        # source, view_img, save_txt, imgsz = opt.source, opt.view_img, opt.save_txt, opt.img_size
 
         vid_path, vid_writer = None, None
 
-        save_path = 'test.mp4'
+        save_path = 'test1.mp4'
 
         if vid_path != save_path:  # new video
             vid_path = save_path
@@ -79,7 +61,6 @@ class DebuggingTools:
     def get_frame_read(self):
         ret, frame = self.vid_cap.read()
 
-        print("1")
         # Padded resize
         if ret:
             img = self.letterbox(frame, new_shape=self.img_size)[0]
@@ -87,8 +68,6 @@ class DebuggingTools:
             img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
             img = np.ascontiguousarray(img)
             return ret,img,frame
-
-        print("2")
 
         return ret,[],frame
     
@@ -201,7 +180,7 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='exp', help='save results to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     opt = parser.parse_args()
-    opt.weight = '../runs/train/exp7_trolley_bed/weights/best.pt'
+    opt.weights = '../runs/train/exp8_trolley_bed/weights/best.pt'
     opt.conf_thres = 0.5
 
     print(opt)
@@ -225,7 +204,9 @@ if __name__ == '__main__':
     while(loading_video):
         try:
             status , input_image , im0 = dataset.get_frame_read()
+
             if not status:
+                print("Error from get_frame_read")
                 loading_video = False
                 dataset.release_video_writer()
                 sys.exit(0)
@@ -263,6 +244,11 @@ if __name__ == '__main__':
             for d in trackers:
                 if d[4] in track_trajectory:
                     track_trajectory[d[4]].append([int((d[2]+d[0])/2),int((d[3]+d[1])/2)])
+                    # print(track_trajectory[d[4]])
+                    size = len(track_trajectory[d[4]])
+                    # print("{} --> {}".format(d[4],size))
+                    current_track_ids.append(d[4])
+
                 else:
                     trajectory_point_history = collections.deque(maxlen=collection_length)
                     trajectory_point_history.append([int((d[2]+d[0])/2),int((d[3]+d[1])/2)])
@@ -270,9 +256,6 @@ if __name__ == '__main__':
                     current_track_ids.append(d[4])
                 d = d.astype(np.int32)
                 cv2.rectangle(im0, (d[0],d[1]),(d[2],d[3]), color=(255, 0, 0) , thickness=2) 
-
-            # cv2.imshow("Frame",im0)
-            # cv2.waitKey(0)
 
             for key in track_trajectory:
                 if key not in current_track_ids:
@@ -294,8 +277,20 @@ if __name__ == '__main__':
                             moving_direction = 'left'
 
                         last_x = i[0]
-                        
+            
+            end_time = time.time()
+
+            for key in track_trajectory:
+                for i in track_trajectory[key]:
+                    cv2.circle(im0, (i[0], i[1]), radius=5, color=(255, 0, 0), thickness=-1)
+
+                centre_x = i[0]-200 if i[0]-200>0 else 10
+                centre_y = i[1]-100 if i[1]-100>0 else 10
+
+                cv2.putText(im0, str(key)+"_"+str(moving_direction), (centre_x, centre_y), cv2.FONT_HERSHEY_SIMPLEX ,fontScale=1, color=(255, 0, 0), thickness=2, lineType=cv2.LINE_AA) 
+
         dataset.save_frame_into_video(im0)
+        print(f"FPS: {1/(end_time-start_time)}")
 
 
 

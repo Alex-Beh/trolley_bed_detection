@@ -35,7 +35,7 @@ class DebuggingTools:
 
         vid_path, vid_writer = None, None
 
-        save_path = 'test1.mp4'
+        save_path = 'test2.mp4'
 
         if vid_path != save_path:  # new video
             vid_path = save_path
@@ -184,9 +184,7 @@ if __name__ == '__main__':
     opt.conf_thres = 0.5
 
     print(opt)
-
-    # TODO： Development Phase
-
+    
     # Alex trajectory visualization start from here
     track_trajectory = dict()
     collection_length = 20
@@ -197,7 +195,7 @@ if __name__ == '__main__':
     total_time = 0.0
 
     tracker = Tracker()
-    dataset = DebuggingTools('../dataset/trolley_bed/1.mp4')
+    dataset = DebuggingTools('../dataset/trolley_bed/5.mp4')
     detector = Detection()
     
     loading_video = True
@@ -244,9 +242,7 @@ if __name__ == '__main__':
             for d in trackers:
                 if d[4] in track_trajectory:
                     track_trajectory[d[4]].append([int((d[2]+d[0])/2),int((d[3]+d[1])/2)])
-                    # print(track_trajectory[d[4]])
                     size = len(track_trajectory[d[4]])
-                    # print("{} --> {}".format(d[4],size))
                     current_track_ids.append(d[4])
 
                 else:
@@ -281,6 +277,9 @@ if __name__ == '__main__':
             end_time = time.time()
 
             for key in track_trajectory:
+                if key not in current_track_ids:
+                    continue
+                
                 for i in track_trajectory[key]:
                     cv2.circle(im0, (i[0], i[1]), radius=5, color=(255, 0, 0), thickness=-1)
 
@@ -289,8 +288,15 @@ if __name__ == '__main__':
 
                 cv2.putText(im0, str(key)+"_"+str(moving_direction), (centre_x, centre_y), cv2.FONT_HERSHEY_SIMPLEX ,fontScale=1, color=(255, 0, 0), thickness=2, lineType=cv2.LINE_AA) 
 
+            # Draw Confidence
+            for i in pred_[0].cpu().numpy():
+                centre_x = i[0]-200 if i[0]-200>0 else 10
+                centre_y = i[1]-100 if i[1]-100>0 else 10
+                cv2.putText(im0, str(int(i[4]*100))+"_confidence", (int(centre_x), int(centre_y)), cv2.FONT_HERSHEY_SIMPLEX ,fontScale=1, color=(255, 0, 0), thickness=2, lineType=cv2.LINE_AA) 
+
+            print(f"FPS: {1/(end_time-start_time)}")
+
         dataset.save_frame_into_video(im0)
-        print(f"FPS: {1/(end_time-start_time)}")
 
 
 
